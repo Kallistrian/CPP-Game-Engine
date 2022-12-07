@@ -19,6 +19,7 @@ int main() {
 	}
 
 	std::cout << "Application window opened! :)";
+	std::cout << std::endl << "Testing pull request...";
 	std::cin.get();
 
 	glfwDestroyWindow(window);
