@@ -1,3 +1,4 @@
+#include <glad\gl.h>
 #define GLFW_DLL // needed for window to use the GLFW library dynamically
 #include <GLFW/glfw3.h> // The GLFW library is used to access OS-specific tasks such as opening windows, reading keyboard input, rendering, etc.
 #include <iostream>
@@ -23,8 +24,12 @@ int main() {
 		// Window or OpenGL context creation failed
 	}
 
+	glfwMakeContextCurrent(window); // sets current context to generated window
+
+	gladLoadGL(glfwGetProcAddress); // initializes glad 
+
 	bool isRunning = true;
-	while (isRunning) {
+	while (isRunning) { // the update loop that runs each frame
 
 
 
