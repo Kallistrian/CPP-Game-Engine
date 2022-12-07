@@ -11,9 +11,8 @@ const char* const windowName = "C++ Game"; //   c-string as GLFW doesn't like st
 
 
 int main() {
-	if (!glfwInit()) // initializes GLFW and checks for success
+	if (!glfwInit()) // checks to make sure GLFW initialized successfully
 	{
-		std::cout << "Failed to initialize GLFW" << std::endl;
 		return EXIT_FAILURE;
 		// Initialization failed
 	}
@@ -29,11 +28,7 @@ int main() {
 
 	glfwMakeContextCurrent(window); // sets current opengl context to generated window
 
-	if (!gladLoadGL(glfwGetProcAddress)) { // initializes glad  and checks for success
-		std::cout << "Failed to initialize GLAD" << std::endl;
-		return EXIT_FAILURE;
-		// Initialization failed
-	}
+	gladLoadGL(glfwGetProcAddress); // initializes glad 
 
 	while (!glfwWindowShouldClose(window)) // while the window is not set to close
 	{
