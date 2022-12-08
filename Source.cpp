@@ -1,5 +1,4 @@
-#include <glad\gl.h>
-#define GLFW_DLL // needed for window to use the GLFW library dynamically
+#include <glad\gl.h> // this extension loader library loads OpenGL and some extensions to it
 #include <GLFW\glfw3.h> // The GLFW library is used to access OS-specific tasks such as opening windows, reading keyboard input, rendering, etc.
 #include <iostream>
 
