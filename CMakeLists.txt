@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(CPPGameProject)
-add_executable(CPPGame source.cpp)
+add_executable(CPPGame source.cpp gl.c)
 add_library(glad INTERFACE)
 find_package(glfw3 3.3 REQUIRED)
 target_include_directories(glad INTERFACE include)	
