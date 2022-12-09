@@ -1,6 +1,13 @@
 #include <glad\gl.h> // this extension loader library loads OpenGL and some extensions to it
 #include <GLFW\glfw3.h> // The GLFW library is used to access OS-specific tasks such as opening windows, reading keyboard input, rendering, etc.
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+#include <filesystem>
 #include <iostream>
+
+// Prototypes //
+
+// Prototypes //
 
 // Constants //
 const unsigned short windowX = 640;
@@ -9,34 +16,49 @@ const char* const windowName = "C++ Game"; //   c-string as GLFW doesn't like st
 // Constants //
 
 // Shaders //
-const char* vertexShaderSource = "#version 330 core\n" // shaders are read as strings
-							     "layout (location = 0) in vec3 aPos;\n" // input
-							  	 "void main()\n" // shaders use a lot of vectors to represent 3D points
-								 "{\n" // this one maps a vec3 onto a vec4 (the 4th value is used for something special not space)
-								 "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n" // output
-								 "}\0";
-const char* fragmentShaderSource = "#version 330 core\n" 
-								   "out vec4 FragColor;\n" // outputs color for rendered pixels 
-								   "void main()\n"
-								   "{\n"
-								   "	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-								   "}\0";
+char* vertexShaderSource = "#version 330 compatibility\n"
+							 "layout(location = 0) in vec3 aPos;\n"
+							 "layout(location = 1) in vec3 aColor;\n"
+							 "layout(location = 2) in vec2 aTexCoord;\n"
+							 "out vec3 ourColor;\n"
+						     "out vec2 TexCoord;\n"
+							 "void main()\n"
+							 "{\n"
+							 "	gl_Position = vec4(aPos, 1.0);\n"
+							 "	ourColor = aColor;\n"
+							 "	TexCoord = aTexCoord;\n"
+							 "};\n";
+char* fragmentShaderSource = "#version 330 compatibility\n"
+							 "out vec4 FragColor;\n"
+							 "in vec3 ourColor;\n"
+							 "in vec2 TexCoord;\n"
+							 "uniform sampler2D ourTexture;\n"
+							 "void main()\n"
+							 "{\n"
+							 "	FragColor = texture(ourTexture, TexCoord);\n"
+							 "}\n";
 // Shaders //
 
-// Triangle Coordinates //
-const float vertices[] = {
-	-0.5f, -0.5f, 0.0f, // coordinates for OpenGL are bounded from 0.0 to 1.0 based on an xy graph
-	 0.5f, -0.5f, 0.0f, // these are called "normalized device coordinates"
-	 0.0f,  0.5f, 0.0f
+// Triangle Data //
+float vertices[] = {
+	// positions          // colors           // texture coords
+	 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+	 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+	-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+	-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 };
-// Triangle Coordinates //
+unsigned int indices[] = {  // note that we start from 0!
+	0, 1, 3,   // first triangle
+	1, 2, 3    // second triangle
+};
+// Triangle Data //
 
 
 int main() {
+	// Initialization //
 	if (!glfwInit()) // initializes GLFW and checks for success
 	{
 		std::cout << "Failed to initialize GLFW" << std::endl;
-		return EXIT_FAILURE;
 		// Initialization failed
 	}
 
@@ -46,7 +68,7 @@ int main() {
 	GLFWwindow* window = glfwCreateWindow(windowX, windowY, windowName, NULL, NULL); // creates window
 	if (!window)
 	{
-		return EXIT_FAILURE;
+		std::cout << "Window/OpenGL context creation failed" << std::endl;
 		// Window or OpenGL context creation failed
 	}
 
@@ -55,11 +77,11 @@ int main() {
 
 	if (!gladLoadGL(glfwGetProcAddress)) { // initializes glad  and checks for success
 		std::cout << "Failed to initialize GLAD" << std::endl;
-		return EXIT_FAILURE;
 		// Initialization failed
 	}
+	// Initialization //
 
-	// we need a shader now, write it in GLSL!
+	// Shader //
 	unsigned int vertexShader; // creates and designates it as the vertex shader
 	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
@@ -96,36 +118,66 @@ int main() {
 	glUseProgram(shaderProgram); // every shader/rendering call will now use the program
 	glDeleteShader(vertexShader); // individual shaders are now obsolete
 	glDeleteShader(fragmentShader);
+	// Shader //
 
-
-	// lets make a VAO to store vertex configurations for future use instead of restating them every time
-	unsigned int VAO;
+	// Drawing Initialization // 
+	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
 	glBindVertexArray(VAO);
 
-	unsigned int VBO; // we want to sent lots of vertices at a time to the gpu as it is more efficient
-	glGenBuffers(1, &VBO); // generates the unique ID for a buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO); // assigns the new buffer as the official one-and-only Vertex Buffer
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // passes vertices into the buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	// tell OpenGL how it should interpret vertex data
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	/* Param 1 - specifies the vertex attribute to configure, the position
-				 vertex attribute was specified in the vertex shader as 0
-	   Param 2 - size of the VA, it's a 3 coord vector
-	   Param 3 - type of data
-	   Param 4 - normalizes data, not relevant
-	   Param 5 - space between VAs (they are tightly packed so 0 works too)
-	   Param 6 - offset of where position data starts in the vertex buffer (it's a void* for some reason so cast it)*/
-	glEnableVertexAttribArray(0); // enables vertex attributes which are off by default
-	
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	// texture coord attribute
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	// Drawing Initialization // 
+
+	// Texture //
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
+	unsigned char* data = stbi_load("..\\..\\..\\container.jpg", &width, &height, &nrChannels, 0); // path relative to exe
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl << stbi_failure_reason() << std::endl;
+	}
+	stbi_image_free(data);
+	// Texture //
+
+	// Render Loop //
 	float rValue = 0.2;
 	float gValue = 0.3;
 	float bValue = 0.4;
 	bool rise = true;
 
-	while (!glfwWindowShouldClose(window)) // render loop
+	while (!glfwWindowShouldClose(window)) 
 	{
 		// viewport 
 		int width, height;
@@ -156,12 +208,14 @@ int main() {
 				rise = true;
 			}
 		}
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// update
 		glfwSwapBuffers(window); // rendering buffer
 		glfwPollEvents(); // this keeps the window system in contact with GLFW and processes stuff
 	}
+	// Render Loop //
 
 	glfwDestroyWindow(window);
 	return EXIT_SUCCESS;
