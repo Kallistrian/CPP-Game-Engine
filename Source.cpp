@@ -11,7 +11,7 @@ const char* const windowName = "C++ Game"; //   c-string as GLFW doesn't like st
 // Constants //
 
 // Shaders //
-char* vertexShaderSource = "#version 330 compatibility\n" // shaders start with the OpenGL version
+char* vertexShaderSource =   "#version 330 compatibility\n" // shaders start with the OpenGL version
 							 "layout(location = 0) in vec3 aPos;\n" // Property 1 in the vertex (Position)
 							 "layout(location = 1) in vec3 aColor;\n" // Property 2 in the vertex (Color)
 							 "layout(location = 2) in vec2 aTexCoord;\n" // Property 3 in the vertex (Texture Coordinate)
@@ -174,7 +174,6 @@ int main() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
-	// The FileSystem::getPath(...) is part of the GitHub repository so we can find files on any IDE/platform; replace it with your own image path.
 	unsigned char* data = stbi_load("..\\..\\..\\container.jpg", &width, &height, &nrChannels, 0); // loads image path relative to exe
 	if (data) // checks that image loaded successfully
 	{
