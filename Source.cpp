@@ -3,6 +3,9 @@
 #define STB_IMAGE_IMPLEMENTATION // this prevents everything from breaking by compiling multiple times
 #include <stb_image.h> // this is used to load image files
 #include <iostream>
+#include <glm/glm.hpp> // openGL Mathematics
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Constants //
 const unsigned short windowX = 640;
@@ -17,9 +20,10 @@ char* vertexShaderSource =   "#version 330 compatibility\n" // shaders start wit
 							 "layout(location = 2) in vec2 aTexCoord;\n" // Property 3 in the vertex (Texture Coordinate)
 							 "out vec3 ourColor;\n" // these two lines send color and text coord to the fragment shader
 						     "out vec2 TexCoord;\n"
+							 "uniform mat4 transform;\n"
 							 "void main()\n"
 							 "{\n"
-							 "	gl_Position = vec4(aPos, 1.0);\n" // takes xyz and passes them through the shader (the extra 1.0 is for weird stuff)
+							 "	gl_Position = transform * vec4(aPos, 1.0);\n" // takes xyz and passes them through the shader (the extra 1.0 is for weird stuff)
 							 "	ourColor = aColor;\n"
 							 "	TexCoord = aTexCoord;\n"
 							 "};\n";
@@ -118,6 +122,7 @@ int main() {
 	};
 	// Vertices //
 
+
 	/*
 	VBO - Passing vertex objects to the GPU is slow, so we want to pass
 		  a lot of them at the same time. A VBO is a vertex buffer object
@@ -166,19 +171,25 @@ int main() {
 	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// blending
+	glEnable(GL_BLEND); 
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 	// set texture filtering parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
-	unsigned char* data = stbi_load("..\\..\\..\\container.jpg", &width, &height, &nrChannels, 0); // loads image path relative to exe
+	stbi_set_flip_vertically_on_load(true); // flips it the right way up since GL expects y = 0.0 to be bottom, images tend to have it top!
+	unsigned char* data = stbi_load("..\\..\\..\\love.png", &width, &height, &nrChannels, 0); // loads image path relative to exe
 	if (data) // checks that image loaded successfully
 	{
 		// generate texture
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D); // mipmaps are smaller versions of the texture that get viewed from a distance
 	}
 	else
@@ -196,12 +207,13 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) 
 	{
+
 		// viewport 
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height); // auto-adjusts if user resizes window
 		glViewport(0, 0, width, height); // a single viewport filling the window
 
-		// render
+		// background
 		glClearColor(rValue, gValue, bValue, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		if (rise == true) {
@@ -220,7 +232,13 @@ int main() {
 				rise = true;
 			}
 		}
-
+		// transformation
+		glm::mat4 trans = glm::mat4(1.0f);
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0)); // these two operations are done in reverse order
+		unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
+		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+		
+		// draw
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // draw that rectangle that has a texture mapped onto it!
 
 		// update
