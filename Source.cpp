@@ -20,10 +20,12 @@ char* vertexShaderSource =   "#version 330 compatibility\n" // shaders start wit
 							 "layout(location = 2) in vec2 aTexCoord;\n" // Property 3 in the vertex (Texture Coordinate)
 							 "out vec3 ourColor;\n" // these two lines send color and text coord to the fragment shader
 						     "out vec2 TexCoord;\n"
-							 "uniform mat4 transform;\n"
+							 "uniform mat4 model;\n"
+							 "uniform mat4 view;\n"
+							 "uniform mat4 projection;\n"
 							 "void main()\n"
 							 "{\n"
-							 "	gl_Position = transform * vec4(aPos, 1.0);\n" // takes xyz and passes them through the shader (the extra 1.0 is for weird stuff)
+							 "	gl_Position = projection * view * model * vec4(aPos, 1.0);\n" // takes xyz and passes them through the shader (the extra 1.0 is for weird stuff)
 							 "	ourColor = aColor;\n"
 							 "	TexCoord = aTexCoord;\n"
 							 "};\n";
@@ -199,6 +201,50 @@ int main() {
 	stbi_image_free(data);
 	// Texture //
 
+	// Coordinate Systems //
+	/* To render something in three dimensions, we pass it through a bunch of different coordinate systems until it gets
+	to a nice set of normalized device coordinates which OpenGL uses to draw all of those tricky triangles.
+	All of the coordinate steps in order: Local > Global > View > Projection > Clip > Normalized > Screen 
+	
+	These matrices will be passed to the vertex shader as uniforms and multiplied by the vertex coordinates there.*/
+
+	// we start with the model matrix, used to transform local coordinates to global coordinates
+	glm::mat4 model = glm::mat4(1.0f); // declare
+	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // rotate the object onto the ground in global space for fun
+
+	// next comes the view matrix, but it's superceded by the LookAt matrix later on
+	// glm::mat4 view = glm::mat4(1.0f); 
+
+	// this moves the camera back (or the scene forwards), it's reverse direction
+	// view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+	// next comes the projection matrix, this defines the visible space with a cool shape called a frustum
+	glm::mat4 projection;
+	// you can use an orthagonal projection matrix or a perspective projection matrix, generally we want perspective!
+	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
+
+	// Camera
+	// we need to find relative (local?) axes for the camera
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f); // first set camera to same position as the view matrix cause it's the same
+
+	glm::vec3 cameraTarget = glm::vec3(0.0f, 0.0f, 0.0f);
+	// uses vector subtraction to find a vector that is the difference between the two
+	glm::vec3 cameraDirection = glm::normalize(cameraPos - cameraTarget); // gives the direction the camera is pointing at (though it's actually the opposite)
+
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f); // this is relative to the world, used for a cool trick next line
+	// uses vector cross multiplication to find a vector perpendicular to both vectors
+	glm::vec3 cameraRight = glm::normalize(glm::cross(up, cameraDirection)); // positive x-axis
+
+	glm::vec3 cameraUp = glm::cross(cameraDirection, cameraRight); // same cross multiplication principle to get up relative to the camera 
+
+	// The LookAt matrix is very important and easy to create. It just needs camera position, target position, and a (world) up vector.
+	// it is used to transform world coordinates to the camera view
+	glm::mat4 view;
+	view = glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f),
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f));
+
+
 	// Render Loop //
 	float rValue = 0.2; // will be used to make background a pulsing blue color
 	float gValue = 0.3;
@@ -232,12 +278,22 @@ int main() {
 				rise = true;
 			}
 		}
-		// transformation
-		glm::mat4 trans = glm::mat4(1.0f);
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0)); // these two operations are done in reverse order
-		unsigned int transformLoc = glGetUniformLocation(shaderProgram, "transform");
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		
+
+		// rotate camera
+		const float radius = 10.0f; // uses a circle with a point travelling around it like a circuit for the camera movement
+		float camX = sin(glfwGetTime()) * radius;
+		float camZ = cos(glfwGetTime()) * radius;
+		glm::mat4 view;
+		view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0)); // note the camX and camZ used
+
+		// send the coordinate matrices to the shader
+		int modelLoc = glGetUniformLocation(shaderProgram, "model");
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+		int viewLoc = glGetUniformLocation(shaderProgram, "view");
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+		int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
 		// draw
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // draw that rectangle that has a texture mapped onto it!
 
