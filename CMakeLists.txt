@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(CPPGameProject)
-add_executable(CPPGame source.cpp gl.c "include/shader.h")
+add_executable(CPPGame source.cpp gl.c "include/shader.h" "shader.cpp")
 add_library(glad INTERFACE)
 add_library(stb INTERFACE)
 target_include_directories(glad INTERFACE include)	
