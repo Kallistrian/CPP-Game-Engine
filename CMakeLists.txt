@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(CPPGameProject)
-add_executable(CPPGame source.cpp gl.c "include/shader.h")
+add_executable(CPPGame source.cpp gl.c "include/shader.h" "shader.cpp" "include/gameobject.h")
 add_library(glad INTERFACE)
 add_library(stb INTERFACE)
 target_include_directories(glad INTERFACE include)	
@@ -12,3 +12,5 @@ target_link_libraries(CPPGame PUBLIC glad)
 target_link_libraries(CPPGame PUBLIC stb)
 target_link_libraries(CPPGame PUBLIC glfw)
 target_link_libraries(CPPGame PUBLIC glm::glm)
+
+file(COPY "assets" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
