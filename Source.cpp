@@ -36,16 +36,20 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 int main() {
-	// Initialization //
-	if (!glfwInit()) // initializes GLFW and checks for success
+	/*\\\\\\\\\\\\\\\\\\******************** Initialization ********************\\\\\\\\\\\\\\\\\\*/
+	////////////////////--------------------------------------------------------////////////////////
+
+	// GLFW //
+	if (!glfwInit())
 	{
 		std::cout << "Failed to initialize GLFW" << std::endl;
-		// Initialization failed
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // sets minimum requirement for OpenGL 3.x
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); // sets minimum requirement for OpenGL x.3
+	// GLFW //
 
+	// Window //
 	GLFWwindow* window = glfwCreateWindow(windowX, windowY, windowName, NULL, NULL); // creates window
 	if (!window)
 	{
@@ -54,19 +58,41 @@ int main() {
 
 	glfwMakeContextCurrent(window); // sets current opengl context to generated window
 	glfwSwapInterval(1); // v-sync
+	// Window //
 
-	if (!gladLoadGL(glfwGetProcAddress)) { // initializes glad  and checks for success
+	// GLAD //
+	if (!gladLoadGL(glfwGetProcAddress)) {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
-	// Initialization //
+	// GLAD //
 
 	// Shaders //
-	shader defaultShader("assets/shaders/default.vert", "assets/shaders/default.frag");
+	Shader defaultShader("assets/shaders/default.vert", "assets/shaders/default.frag");
 	glUseProgram(defaultShader.ID);
 	// Shaders // 
 
-	// Drawing Initialization // 
-	// Vertices //
+	// Textures // 
+	glEnable(GL_BLEND); // blending
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	// texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR); // texture filtering
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Textures // 
+	
+	// Misc //
+	glEnable(GL_DEPTH_TEST); // z layers
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // hides and captures the cursor
+	glfwSetCursorPosCallback(window, mouse_callback); // monitors mouse input
+	// Misc //
+
+	/*\\\\\\\\\\\\\\\\\\******************** Initialization ********************\\\\\\\\\\\\\\\\\\*/
+	////////////////////--------------------------------------------------------////////////////////
+
 	float vertices[] = {
 	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
@@ -110,10 +136,8 @@ int main() {
 	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
 	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
-	// Vertices //
 
-	glEnable(GL_DEPTH_TEST); // z layers
-
+	// Buffer //
 	/*
 	VBO - Passing vertex objects to the GPU is slow, so we want to pass
 		  a lot of them at the same time. A VBO is a vertex buffer object
@@ -149,23 +173,12 @@ int main() {
 	// texture coord attribute
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
-	// Drawing Initialization // 
+	// Buffer //
 
 	// Texture //
 	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-	// blending
-	glEnable(GL_BLEND); 
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	float borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true); // flips it the right way up since GL expects y = 0.0 to be bottom, images tend to have it top!
@@ -184,38 +197,19 @@ int main() {
 	// Texture //
 
 	// Coordinate Systems //
-	/* To render something in three dimensions, we pass it through a bunch of different coordinate systems until it gets
-	to a nice set of normalized device coordinates which OpenGL uses to draw all of those tricky triangles.
-	All of the coordinate steps in order: Local > Global > View > Projection > Clip > Normalized > Screen 
-	
-	These matrices will be passed to the vertex shader as uniforms and multiplied by the vertex coordinates there.*/
-
-	// we start with the model matrix, used to transform local coordinates to global coordinates
 	glm::mat4 model = glm::mat4(1.0f); // declare
 	model = glm::scale(model, glm::vec3(7.5f, 2.5f, 7.5f)); // scale the cube
 	model = glm::translate(model, glm::vec3(0.0f, 0.3f, 0.0f)); // move it up
-	//model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f)); // rotate the object onto the ground in global space for fun
-
-	// next comes the view matrix, but it's superceded by the LookAt matrix later on
-	// glm::mat4 view = glm::mat4(1.0f); 
-
-	// this moves the camera back (or the scene forwards), it's reverse direction
-	// view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-	// next comes the projection matrix, this defines the visible space with a cool shape called a frustum
+	
 	glm::mat4 projection;
-	// you can use an orthagonal projection matrix or a perspective projection matrix, generally we want perspective!
 	projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
 
-	// The LookAt matrix is very important and easy to create. It just needs camera position, target position, and a (world) up vector.
-	// it is used to transform world coordinates to the camera view
 	glm::mat4 view;
 	view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-	// mouselook
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); // hides and captures the cursor
-	glfwSetCursorPosCallback(window, mouse_callback);
+	// Coordinate Systems //
 
-	// Render Loop //
+	/*\\\\\\\\\\\\\\\\\\********************   Render Loop  ********************\\\\\\\\\\\\\\\\\\*/
+	////////////////////--------------------------------------------------------////////////////////
 	float rValue = 0.2; // will be used to make background a pulsing blue color
 	float gValue = 0.3;
 	float bValue = 0.4;
@@ -223,16 +217,18 @@ int main() {
 
 	while (!glfwWindowShouldClose(window)) 
 	{
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Misc //
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // ensures z-order is drawn right
+		processInput(window); // monitors key input
+		// Misc //
 
-		processInput(window);
-
-		// viewport 
+		// Viewport //
 		int width, height;
 		glfwGetFramebufferSize(window, &width, &height); // auto-adjusts if user resizes window
 		glViewport(0, 0, width, height); // a single viewport filling the window
+		// Viewport //
 
-		// background
+		// Background //
 		glClearColor(rValue, gValue, bValue, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		if (rise == true) {
@@ -251,38 +247,37 @@ int main() {
 				rise = true;
 			}
 		}
-
-		// delta time	
+		// Background //
+	
+		// Delta Time //	
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
-
-		// send the coordinate matrices to the shader
-		
-		
+		// Delta Time //	
+	
+		// Send Coordinate Systems to Shaders //
 		int projectionLoc = glGetUniformLocation(defaultShader.ID, "projection");
 		glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-		// camera / view
-		// change this to limit camera movement rather than camera pos so we can jump and do gravity
-		if (cameraPos.y > 0.0f || cameraPos.y < 0.0f) { // limit vertical movement (FPS camera)
-			cameraPos.y = 0.0f;
-		}
-		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); // changed by mouse/key input
 		int viewLoc = glGetUniformLocation(defaultShader.ID, "view");
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
 		int modelLoc = glGetUniformLocation(defaultShader.ID, "model");
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-		// draw
+		// Send Coordinate Systems to Shaders //
+		
+		// Draw //
 		glDrawArrays(GL_TRIANGLES, 0, 36); // draw that rectangle that has a texture mapped onto it!
-
-		// update
-		glfwSwapBuffers(window); // rendering buffer, basically it swaps between two frames super fast while changing the other
-		glfwPollEvents(); // this keeps the window system in contact with GLFW and processes stuff
+		// Draw //
+		
+		// Update //
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+		// Update //
 	}
-	// Render Loop //
+	/*\\\\\\\\\\\\\\\\\\********************   Render Loop  ********************\\\\\\\\\\\\\\\\\\*/
+	////////////////////--------------------------------------------------------////////////////////
 
 	glfwDestroyWindow(window);
 	return EXIT_SUCCESS;
@@ -290,10 +285,11 @@ int main() {
 
 void processInput(GLFWwindow* window) {
 	const float cameraSpeed = 2.5f * deltaTime; // adjust accordingly
+	glm::vec3 limit = {cameraFront.x, 0.0f, cameraFront.z}; // limits y movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		cameraPos += cameraSpeed * cameraFront; // cameraFront is the direction vector
+		cameraPos += cameraSpeed * limit; // cameraFront is the direction vector
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
+		cameraPos -= cameraSpeed * limit;
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
 		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed; // the vectors for strafing are normalized so that the camera orientation doesn't affect speed
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)

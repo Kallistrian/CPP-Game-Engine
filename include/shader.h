@@ -4,10 +4,13 @@
 #include <fstream>
 #include <string>
 
-class shader {
+class Shader {
+private:
+	unsigned int vertexShader;
+	unsigned int fragmentShader;
 public:
 	unsigned int ID;
-	shader(std::string vertexShaderPath, std::string fragmentShaderPath);
+	Shader(std::string vertexShaderPath, std::string fragmentShaderPath);
 
 private:
 	std::string ReadShaderFile(std::string file);
