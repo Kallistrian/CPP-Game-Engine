@@ -61,12 +61,7 @@ int main() {
 	// Initialization //
 
 	// Shaders //
-	//unsigned int vertexShader = CompileShader("..\\..\\..\\default.vert");
-	//unsigned int fragmentShader = CompileShader("..\\..\\..\\default.frag");
-	//unsigned int shaderProgram = CreateShaderProgram(vertexShader, fragmentShader);
-	//glUseProgram(shaderProgram);
-
-	shader defaultShader("..\\..\\..\\default.vert", "..\\..\\..\\default.frag");
+	shader defaultShader("assets/shaders/default.vert", "assets/shaders/default.frag");
 	glUseProgram(defaultShader.ID);
 	// Shaders // 
 
@@ -174,7 +169,7 @@ int main() {
 	// load image, create texture and generate mipmaps
 	int width, height, nrChannels;
 	stbi_set_flip_vertically_on_load(true); // flips it the right way up since GL expects y = 0.0 to be bottom, images tend to have it top!
-	unsigned char* data = stbi_load("..\\..\\..\\container.jpg", &width, &height, &nrChannels, 0); // loads image path relative to exe
+	unsigned char* data = stbi_load("assets/textures/container.jpg", &width, &height, &nrChannels, 0); // loads image path relative to exe
 	if (data) // checks that image loaded successfully
 	{
 		// generate texture

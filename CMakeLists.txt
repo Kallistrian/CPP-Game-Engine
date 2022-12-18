@@ -12,3 +12,5 @@ target_link_libraries(CPPGame PUBLIC glad)
 target_link_libraries(CPPGame PUBLIC stb)
 target_link_libraries(CPPGame PUBLIC glfw)
 target_link_libraries(CPPGame PUBLIC glm::glm)
+
+file(COPY "assets" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
