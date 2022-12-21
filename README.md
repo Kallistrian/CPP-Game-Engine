@@ -1,2 +1,2 @@
 # CPP Game Engine
-The goal of this project is to make a 3D game engine based on C++ which can actually run and let you do a small platforming puzzle or shoot a target or something in a designed level.
+The goal of this project is to make a basic 3D game engine using C++ which will allow you to create and play a simple game level.
