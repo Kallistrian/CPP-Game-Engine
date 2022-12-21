@@ -1,13 +1,11 @@
-#include <glad\gl.h> 
 #include "shader.h"
 
-Shader::Shader(std::string vertexShaderPath, std::string fragmentShaderPath) {
+Shader::Shader(const std::string& vertexShaderPath, const std::string& fragmentShaderPath) {
 	unsigned int vertexShader = CompileShader(vertexShaderPath);
 	unsigned int fragmentShader = CompileShader(fragmentShaderPath);
 	ID = CreateShaderProgram(vertexShader, fragmentShader);
 }
-
-unsigned int Shader::CompileShader(std::string file) {
+unsigned int Shader::CompileShader(const std::string& file) {
 	// determine shader type from file extension, all file extensions are four characters long so we grab the first letter
 	const char extensionType = file[file.size() - 4];
 	unsigned int shader; // generates a unique code for a vertex shader
@@ -47,7 +45,7 @@ unsigned int Shader::CreateShaderProgram(unsigned int vertexShader, unsigned int
 	return shaderProgram;
 }
 
-std::string Shader::ReadShaderFile(std::string file) {
+std::string Shader::ReadShaderFile(const std::string& file) {
 	std::ifstream readFile(file);
 	std::string inputString = "";
 	std::string shader = "";
