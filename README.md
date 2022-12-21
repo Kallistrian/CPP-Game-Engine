@@ -4,10 +4,10 @@ The goal of this project is to make a basic 3D game engine using C++ which will 
 Feature List:
 
      o 3D Rendering
-         x ~~Hello Triangle!~~
-         x ~~Simple Cube~~
-         x ~~Transformation Matrices~~
-         x ~~Fly Camera~~
+         x Hello Triangle!
+         x Simple Cube
+         x Transformation Matrices
+         x Fly Camera
          / Model Importing + Rendering
          - ?
      o User Interface
