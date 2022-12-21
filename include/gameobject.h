@@ -1,14 +1,18 @@
-#ifndef SHADER_H 
-#define SHADER_H
+#ifndef GAMEOBJECT_H 
+#define GAMEOBJECT_H
 
 class GameObject {
 	// Transform Component //
 
 	// Transform Component //
 
-	// Render Component //
+
 
 	// Render Component //
+	
+	// Render Component //
+
+
 
 	// Physics Component //
 

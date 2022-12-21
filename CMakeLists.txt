@@ -1,16 +1,24 @@
 cmake_minimum_required(VERSION 3.24)
 project(CPPGameProject)
-add_executable(CPPGame source.cpp gl.c "include/shader.h" "shader.cpp" "include/gameobject.h")
-add_library(glad INTERFACE)
+add_executable(CPPGame source.cpp gl.c "include/shader.h" "shader.cpp" "include/gameobject.h"  "include/model.h" "model.cpp")
+add_custom_command(
+	TARGET CPPGame
+	PRE_BUILD
+	COMMAND ${CMAKE_COMMAND} -E copy_directory "assets" ${CMAKE_CURRENT_BINARY_DIR}
+)
+
 add_library(stb INTERFACE)
-target_include_directories(glad INTERFACE include)	
+add_library(glad INTERFACE)
 find_path(STB_INCLUDE_DIRS "stb_c_lexer.h")
 target_include_directories(stb INTERFACE ${STB_INCLUDE_DIRS})
+target_include_directories(glad INTERFACE include)	
 find_package(glfw3 3.3 REQUIRED)
 find_package(glm CONFIG REQUIRED)
-target_link_libraries(CPPGame PUBLIC glad)
-target_link_libraries(CPPGame PUBLIC stb)
-target_link_libraries(CPPGame PUBLIC glfw)
-target_link_libraries(CPPGame PUBLIC glm::glm)
+find_package(assimp CONFIG REQUIRED)
 
-file(COPY "assets" DESTINATION ${CMAKE_CURRENT_BINARY_DIR}) 
+target_link_libraries(CPPGame PRIVATE glad)
+target_link_libraries(CPPGame PRIVATE stb)
+target_link_libraries(CPPGame PRIVATE glfw)
+target_link_libraries(CPPGame PRIVATE glm::glm)
+target_link_libraries(CPPGame PRIVATE assimp::assimp)
+
