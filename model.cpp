@@ -7,7 +7,7 @@ Model::Model(const std::string& file) {
 		aiProcess_FlipUVs     );
 
 	numMeshes = scene->mNumMeshes;
-	meshIndices = new unsigned int[numMeshes]; // MEMORY LEAK LOL XD NOT GOING TO DELETE THIS ONE XD
+	meshIndices = new unsigned int[numMeshes]; // MEMORY LEAK :D
 	VAOs = new unsigned int[numMeshes];
 	transforms = new glm::mat4[numMeshes];
 
