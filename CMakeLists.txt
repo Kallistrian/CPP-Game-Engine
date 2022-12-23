@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.24)
 project(CPPGameProject)
 add_executable(CPPGame source.cpp gl.c "include/shader.h" "shader.cpp" "include/gameobject.h"  "include/model.h" "model.cpp")
-add_custom_command(
-	TARGET CPPGame
-	PRE_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy_directory "assets" ${CMAKE_CURRENT_BINARY_DIR}
-)
 
 add_library(stb INTERFACE)
 add_library(glad INTERFACE)
@@ -21,4 +16,3 @@ target_link_libraries(CPPGame PRIVATE stb)
 target_link_libraries(CPPGame PRIVATE glfw)
 target_link_libraries(CPPGame PRIVATE glm::glm)
 target_link_libraries(CPPGame PRIVATE assimp::assimp)
-
