@@ -16,5 +16,3 @@ target_link_libraries(CPPGame PRIVATE stb)
 target_link_libraries(CPPGame PRIVATE glfw)
 target_link_libraries(CPPGame PRIVATE glm::glm)
 target_link_libraries(CPPGame PRIVATE assimp::assimp)
-
-COMMENT "IMPORTANT: Copy assets folder into build directory!"
